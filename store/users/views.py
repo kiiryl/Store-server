@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from users.models import User
 from users.forms import UserLoginForm, UserRegisterForm, UserProfileForm
+from products.models import Basket
 
 # Create your views here.
 
@@ -47,12 +48,12 @@ def profile(request):
             return HttpResponseRedirect(reverse('users:profile'))
         else:
             print(form.errors)
-
     else:
         form = UserProfileForm(instance=request.user)
     context = {
         'title': 'Store - профиль', 
         'form': form,
+        'baskets': Basket.objects.filter(user = request.user),
     }
     return render(request, "users/profile.html", context)
 
