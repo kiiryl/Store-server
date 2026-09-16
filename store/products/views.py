@@ -3,8 +3,6 @@ from django.contrib.auth.decorators import login_required
 from products.models import ProductCategory, Product, Basket
 from users.models import User
 
-# Create your views here.
-
 def index(request): 
     context = {
         'title' : 'Store',
