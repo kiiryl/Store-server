@@ -1,6 +1,8 @@
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 @pytest.fixture(scope="session")
@@ -26,7 +28,6 @@ def driver():
     web_driver.implicitly_wait(5)
 
     yield web_driver
-
     web_driver.quit()
 
 
@@ -37,28 +38,26 @@ def create_user(db):
     User = get_user_model()
 
     def _make_user(username="testuser", password="password123", **extra_fields):
-        return User.objects.create_user(
+        user = User.objects.create_user(
             username=username, password=password, **extra_fields
         )
-
+        user.raw_password = password
+        return user
+    
     return _make_user
 
 @pytest.fixture
-def user_driver(driver, live_server, create_user):
-    """
-    Фикстура, которая создает пользователя и сразу авторизует его в Selenium.
-    Возвращает готовый драйвер с залогиненной сессией.
-    """
+def logined_driver(driver, live_server, create_user):    
     username = "testuser"
     password = "password123"
+
+    user = create_user(username = username, password = password)
     
-    # 1. Создаем пользователя в БД
-    create_user(username=username, password=password)
-    
-    # 2. Логинимся через UI
     driver.get(f"{live_server.url}/users/login/")
     driver.find_element(By.NAME, "username").send_keys(username)
     driver.find_element(By.NAME, "password").send_keys(password)
     driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
-    
+
+    WebDriverWait(driver, 5).until(EC.url_changes(f"{live_server.url}/users/login/"))
+    driver.user = user
     yield driver
